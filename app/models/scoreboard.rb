@@ -38,7 +38,9 @@ class Scoreboard
   # past 24 hours
 
   def recent_scores?
-    top_infinity_recent.present? or top_haste_scores_recent.present?
+    top_infinity_recent.present? or
+    top_haste_scores_recent.present? or
+    top_three_scores_recent.present?
   end
 
   def top_infinity_recent
@@ -50,6 +52,17 @@ class Scoreboard
 
   def top_haste_scores_recent
     @top_haste_scores_recent ||= CompletedHasteRound.high_scores(@recent_time)
+  end
+
+  def top_three_scores_recent
+    @top_three_scores_recent ||= CompletedThreeRound.high_scores(@recent_time)
+  end
+
+  def top_repetition_recent
+    @top_repetition_recent ||= group_and_count(
+      CompletedRepetitionLevel.unscoped.where('created_at > ?', @recent_time),
+      @n_homepage
+    )
   end
 
   # scoreboard standalone page
@@ -64,6 +77,33 @@ class Scoreboard
 
   def top_repetition
     group_and_count(CompletedRepetitionLevel.unscoped, @n_scoreboard)
+  end
+
+  def recent_high_rated
+    UserRating
+      .where("updated_at > ?", 3.days.ago)
+      .order('rating DESC')
+      .includes(:user)
+      .limit(5)
+      .map do |u|
+        [
+          u.user,
+          u.rating.round,
+        ]
+      end
+  end
+
+  def most_rated_puzzles
+    UserRating
+      .order('rated_puzzle_attempts_count DESC')
+      .includes(:user)
+      .limit(5)
+      .map do |u|
+        [
+          u.user,
+          u.rated_puzzle_attempts_count
+        ]
+      end
   end
 
   def hall_of_fame

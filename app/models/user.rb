@@ -13,9 +13,13 @@ class User < ActiveRecord::Base
   has_many :completed_speedruns
   has_many :completed_countdown_levels
   has_many :completed_haste_rounds
+  has_many :completed_three_rounds
   has_many :completed_repetition_rounds
   has_many :completed_repetition_levels
   has_many :positions
+
+  has_one :user_chessboard
+  has_one :user_rating
 
   after_initialize :set_default_profile
 
@@ -67,6 +71,16 @@ class User < ActiveRecord::Base
 
   def haste_round_high_score(date)
     completed_haste_rounds.personal_best(date)
+  end
+
+  def num_haste_rounds_completed
+    @num_haste_rounds_completed ||= completed_haste_rounds.count
+  end
+
+  # three mode methods
+
+  def num_three_rounds_completed
+    @num_three_rounds_completed ||= completed_three_rounds.count
   end
 
   # countdown mode methods
@@ -143,6 +157,17 @@ class User < ActiveRecord::Base
     recent_high_scores? \
       or num_repetition_levels_completed > 0 \
       or num_infinity_puzzles_solved > 0
+  end
+
+  # user settings
+
+  def set_sound_enabled(enabled)
+    self.profile["sound_enabled"] = enabled
+    self.save!
+  end
+
+  def sound_enabled?
+    !!self.profile["sound_enabled"]
   end
 
   private
